@@ -35,13 +35,29 @@ class ChessBoard(QMainWindow):
         self.painter.end()
     
     def setup_game(self):
+        rook_capabilities = [*[[i,0] for i in range(8)],*[[0,i] for i in range(8)],*[[-i,0] for i in range(8)],*[[0,-i] for i in range(8)]] # lol
+        bishop_capabilities = [*[[i, i] for i in range(8)],*[[-i, -i] for i in range(8)],*[[i, -i] for i in range(8)],*[[-i, i] for i in range(8)]]
+        """
         self.pieces = {
-            "B": Piece("pieces/wB.svg", pos=[2 ,0]),
-            "K": Piece("pieces/wK.svg", pos=[4 ,0], move_capabilities = [[0, 1],[0, -1],[1, 0],[-1, 0],[1, 1],[-1, -1],[-1, 1],[1, -1]]),
-            "N": Piece("pieces/wN.svg", pos=[1 ,0]),
-            "P": Piece("pieces/wP.svg", pos=[0 ,1], move_capabilities=[[0, 1], [0, 2]]),
-            "Q": Piece("pieces/wQ.svg", pos=[5 ,0]),
-            "R": Piece("pieces/wR.svg", pos=[0 ,0]),
+            "B": Bishop("pieces/wB.svg", pos=[2 ,0], move_capabilities = bishop_capabilities, team = "white"),
+            "K": King("pieces/wK.svg", pos=[4 ,0], move_capabilities = [[0, 1],[0, -1],[1, 0],[-1, 0],[1, 1],[-1, -1],[-1, 1],[1, -1]], team = "white"),
+            "N": Knight("pieces/wN.svg", pos=[1 ,0], move_capabilities = [[1, 2], [2, 1], [-1, 2], [2, -1], [-1, -2], [-2, 1], [1, -2], [-2, -1]], team = "white"),
+            "P": Pawn("pieces/wP.svg", pos=[0 ,1], move_capabilities =[[0, 1], [0, 2]], team = "white"),
+            "Q": Queen("pieces/wQ.svg", pos=[5 ,0], move_capabilities =rook_capabilities+bishop_capabilities, team = "white"),
+            "R": Rook("pieces/wR.svg", pos=[0 ,0], move_capabilities =rook_capabilities, team="white"),
+
+            "b": Bishop("pieces/bB.svg", pos=[2 ,7], move_capabilities = bishop_capabilities, team = "black"),
+            "k": King("pieces/bK.svg", pos=[4 ,7], move_capabilities = [[0, 1],[0, -1],[1, 0],[-1, 0],[1, 1],[-1, -1],[-1, 1],[1, -1]], team = "black"),
+            "n": Knight("pieces/bN.svg", pos=[1 ,7], move_capabilities = [[1, 2], [2, 1], [-1, 2], [2, -1], [-1, -2], [-2, 1], [1, -2], [-2, -1]], team = "black"),
+            "p": Pawn("pieces/bP.svg", pos=[0 ,6], move_capabilities =[[0, -1], [0, -2]], team = "black"),
+            "q": Queen("pieces/bQ.svg", pos=[5 ,7], move_capabilities =rook_capabilities+bishop_capabilities, team = "black"),
+            "r": Rook("pieces/bR.svg", pos=[0 ,7], move_capabilities =rook_capabilities, team="black")
+        }
+        """
+        self.pieces = {
+            "R": Rook("pieces/wR.svg", pos=[0 ,0], move_capabilities =rook_capabilities, team="white"),
+
+            "r": Rook("pieces/bR.svg", pos=[0 ,7], move_capabilities =rook_capabilities, team="black")
         }
         self.highlights = []
         self.current_clicked_piece = None
@@ -70,6 +86,7 @@ class ChessBoard(QMainWindow):
             if [int(x), int(y)] in self.highlights: # checking if clicked square in highlights
                 self.current_clicked_piece.x, self.current_clicked_piece.y = int(x) , int(y)
                 self.update_piece_pos(self.current_clicked_piece)
+                self.current_clicked_piece.piece_moved()
                 self.highlights = []
                 self.update()
             else:
@@ -77,14 +94,17 @@ class ChessBoard(QMainWindow):
                 self.update()
 
 class Piece(QPushButton):
-    def __init__(self, img="", pos=[], move_capabilities=[]):
+    def __init__(self, img="", pos=[], move_capabilities=[], team=""):
         super().__init__()
         self.x, self.y = pos
+        self.team = team
         self.move_capabilities = move_capabilities
         self.clicked.connect(self.on_click_event)
         self.setStyleSheet("background: transparent;")
+        self.setCursor(QCursor(Qt.PointingHandCursor))
         self.setIcon(QIcon(img))
         self.is_clicked = False 
+        self.move_count = 0
 
     def adjust_size_with_resize(self):
         size = self.parent().width() // 8
@@ -102,9 +122,61 @@ class Piece(QPushButton):
             self.parent().current_clicked_piece = self
             for move in self.move_capabilities:
                 self.parent().highlights.append([move[0]+self.x, move[1]+self.y])
+            
+            print(self.parent().highlights)
 
         self.parent().update()
 
+class Pawn(Piece):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def piece_moved(self):
+        self.move_count += 1
+        if self.move_count == 1 and self.team == "white":
+            if [0, 2] in self.move_capabilities:
+                self.move_capabilities.remove([0, 2])
+        elif self.move_count == 1 and self.team == "black":
+            if [0, -2] in self.move_capabilities:
+                self.move_capabilities.remove([0, -2])
+
+        if self.y == 7:
+            print("promote")
+
+class Rook(Piece):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def piece_moved(self):
+        self.move_count += 1
+
+class Bishop(Piece):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def piece_moved(self):
+        self.move_count += 1
+
+class Queen(Piece):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def piece_moved(self):
+        self.move_count += 1
+
+class King(Piece):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def piece_moved(self):
+        self.move_count += 1
+
+class Knight(Piece):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def piece_moved(self):
+        self.move_count += 1
 
 def main():
     app = QApplication([])
