@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -123,7 +124,7 @@ class Piece(QPushButton):
             for move in self.move_capabilities:
                 self.parent().highlights.append([move[0]+self.x, move[1]+self.y])
             
-            print(self.parent().highlights)
+            #print(self.parent().highlights)
 
         self.parent().update()
 
